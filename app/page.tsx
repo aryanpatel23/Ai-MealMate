@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Users, Clock, ShoppingCart, Sparkles, Star } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
   return (
@@ -23,10 +24,14 @@ export default function HomePage() {
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </a>
-            <Button variant="outline" size="sm">
-              Sign In
-            </Button>
-            <Button size="sm">Get Started</Button>
+            <Link href="/auth/login">
+              <Button variant="outline" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/auth/signup">
+              <Button size="sm">Get Started</Button>
+            </Link>
           </nav>
         </div>
       </header>
@@ -54,10 +59,12 @@ export default function HomePage() {
                 placeholder="Enter your dietary preferences (e.g., vegetarian, keto, gluten-free)"
                 className="flex-1"
               />
-              <Button className="sm:w-auto">
-                Generate Meal Plan
-                <Sparkles className="w-4 h-4 ml-2" />
-              </Button>
+              <Link href="/auth/signup">
+                <Button className="sm:w-auto">
+                  Generate Meal Plan
+                  <Sparkles className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -203,9 +210,11 @@ export default function HomePage() {
                     <span>Recipe recommendations</span>
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Get Started Free
-                </Button>
+                <Link href="/auth/signup">
+                  <Button variant="outline" className="w-full bg-transparent">
+                    Get Started Free
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -244,7 +253,9 @@ export default function HomePage() {
                     <span>Premium recipe collection</span>
                   </li>
                 </ul>
-                <Button className="w-full">Start 7-Day Free Trial</Button>
+                <Link href="/auth/signup">
+                  <Button className="w-full">Start 7-Day Free Trial</Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -298,10 +309,12 @@ export default function HomePage() {
             MealMate.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8">
-              Start Your Free Trial
-              <Sparkles className="w-5 h-5 ml-2" />
-            </Button>
+            <Link href="/auth/signup">
+              <Button size="lg" className="text-lg px-8">
+                Start Your Free Trial
+                <Sparkles className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
             <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
               Watch Demo
             </Button>
