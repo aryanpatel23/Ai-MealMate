@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sparkles, Plus, X, Loader2, Crown } from "lucide-react"
+import { Sparkles, Plus, X, Loader2, Crown, AlertCircle } from "lucide-react"
 import { generateMealPlan } from "@/lib/actions/meal-plan-actions"
 import Link from "next/link"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MealPlanGeneratorProps {
   userId: string
@@ -31,14 +32,40 @@ const DIETARY_PREFERENCES = [
   "Nut-free",
 ]
 
+const CUISINES = [
+  "American",
+  "Italian",
+  "Mexican",
+  "Indian",
+  "Thai",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Mediterranean",
+  "French",
+  "Greek",
+  "Middle Eastern",
+  "Vietnamese",
+  "Spanish",
+  "Brazilian",
+  "Moroccan",
+  "Ethiopian",
+  "Lebanese",
+  "Turkish",
+  "Fusion",
+]
+
 const ALLERGIES = ["Nuts", "Dairy", "Eggs", "Soy", "Gluten", "Shellfish", "Fish", "Sesame"]
 
 export function MealPlanGenerator({ userId, profile }: MealPlanGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [preferences, setPreferences] = useState<string[]>(profile?.dietary_preferences || [])
   const [allergies, setAllergies] = useState<string[]>(profile?.allergies || [])
+  const [cuisines, setCuisines] = useState<string[]>(profile?.preferred_cuisines || [])
   const [customPreference, setCustomPreference] = useState("")
   const [customAllergy, setCustomAllergy] = useState("")
+  const [customCuisine, setCustomCuisine] = useState("")
   const [formData, setFormData] = useState({
     cookingSkill: profile?.cooking_skill_level || "intermediate",
     householdSize: profile?.household_size || 1,
@@ -71,27 +98,55 @@ export function MealPlanGenerator({ userId, profile }: MealPlanGeneratorProps) {
     setAllergies(allergies.filter((a) => a !== allergy))
   }
 
+  const addCustomCuisine = () => {
+    if (customCuisine && !cuisines.includes(customCuisine)) {
+      setCuisines([...cuisines, customCuisine])
+      setCustomCuisine("")
+    }
+  }
+
+  const removeCuisine = (cuisine: string) => {
+    setCuisines(cuisines.filter((c) => c !== cuisine))
+  }
+
   const handleGenerate = async () => {
     setIsGenerating(true)
+    setError(null)
+
     try {
+      console.log("[v0] Starting meal plan generation with:", {
+        userId,
+        preferences,
+        allergies,
+        cuisines,
+        cookingSkill: formData.cookingSkill,
+        householdSize: formData.householdSize,
+      })
+
       const result = await generateMealPlan({
         userId,
         preferences,
         allergies,
+        cuisines,
         cookingSkill: formData.cookingSkill,
         householdSize: formData.householdSize,
         calorieTarget: formData.calorieTarget ? Number.parseInt(formData.calorieTarget) : undefined,
         additionalNotes: formData.additionalNotes,
       })
 
+      console.log("[v0] Meal plan generation result:", result)
+
       if (result.success) {
-        // Redirect to the generated meal plan
-        window.location.href = `/dashboard/meal-plans/${result.mealPlanId}`
+        console.log("[v0] Redirecting to meal plan:", result.mealPlanId)
+        // Force a page refresh to ensure new data is loaded
+        window.location.href = `/dashboard/meal-plans/${result.mealPlanId}?refresh=${Date.now()}`
       } else {
-        console.error("Failed to generate meal plan:", result.error)
+        console.error("[v0] Failed to generate meal plan:", result.error)
+        setError(result.error || "Failed to generate meal plan. Please try again.")
       }
     } catch (error) {
-      console.error("Error generating meal plan:", error)
+      console.error("[v0] Error generating meal plan:", error)
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsGenerating(false)
     }
@@ -131,6 +186,13 @@ export function MealPlanGenerator({ userId, profile }: MealPlanGeneratorProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Dietary Preferences */}
         <div className="space-y-3">
           <Label>Dietary Preferences</Label>
@@ -175,6 +237,60 @@ export function MealPlanGenerator({ userId, profile }: MealPlanGeneratorProps) {
                 <Badge key={pref} variant="secondary" className="flex items-center gap-1">
                   {pref}
                   <X className="w-3 h-3 cursor-pointer" onClick={() => removePreference(pref)} />
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cuisine Preferences */}
+        <div className="space-y-3">
+          <Label>Preferred Cuisines</Label>
+          <div className="flex flex-wrap gap-2">
+            {CUISINES.map((cuisine) => (
+              <div key={cuisine} className="flex items-center space-x-2">
+                <Checkbox
+                  id={cuisine}
+                  checked={cuisines.includes(cuisine)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setCuisines([...cuisines, cuisine])
+                    } else {
+                      removeCuisine(cuisine)
+                    }
+                  }}
+                />
+                <Label htmlFor={cuisine} className="text-sm font-normal">
+                  {cuisine}
+                </Label>
+              </div>
+            ))}
+          </div>
+
+          {/* Custom Cuisine Input */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add custom cuisine..."
+              value={customCuisine}
+              onChange={(e) => setCustomCuisine(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && addCustomCuisine()}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={addCustomCuisine}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Selected Cuisines */}
+          {cuisines.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {cuisines.map((cuisine) => (
+                <Badge
+                  key={cuisine}
+                  variant="outline"
+                  className="flex items-center gap-1 border-emerald-200 text-emerald-700"
+                >
+                  {cuisine}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeCuisine(cuisine)} />
                 </Badge>
               ))}
             </div>
